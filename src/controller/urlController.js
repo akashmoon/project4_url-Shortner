@@ -1,6 +1,31 @@
 const shortid = require("shortid");
 const urlModel = require("../model/urlModel");
 
+//--------------------Redis----------------------------------------
+const redis=require("redis")
+const {promisify}=require("util")
+
+//-----------------------Connection setup--------------------------
+
+const redisClient = redis.createClient(
+  17993,
+  "redis-17993.c264.ap-south-1-1.ec2.cloud.redislabs.com",
+  { no_ready_check: true }
+);
+redisClient.auth("vptQNtxXsb7QqOqtXNX722NFlFy9ngBJ", function (err) {
+  if (err) throw err;
+});
+
+redisClient.on("connect", async function () {
+  console.log("Connected to Redis..");
+});
+
+
+const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
+const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
+
+
+
 const isValid = function (value) {
   if (typeof value === "undefined" || typeof value === "null") {
     return false;
@@ -38,9 +63,9 @@ const createurl = async function (req, res) {
 
     let urlCode = shortid.generate().toLowerCase()
       
-    let url = await urlModel.findOne({ longUrl });
+    let url = await urlModel.findOne({ longUrl }).select({longUrl : 1, urlCode : 1, shortUrl: 1, _id: 0});
     if (url) {
-      return res.status(404).send({ status: false, msg: "Url is already exist" });
+      return res.status(201).send({ status: true,msg:"success" ,data:url});
     }
 
     const shortUrl = baseUrl + "/" + urlCode;
@@ -52,7 +77,7 @@ const createurl = async function (req, res) {
       longUrl: newurl.longUrl,
       shortUrl: newurl.shortUrl,
     };
-    return res.status(201).send({ data: currentUrl });
+    return res.status(201).send({status:true, msg:"success", data: currentUrl });
   } catch (err) {
     console.log(err);
     res.status(500).send({ status: false, msg: "Server Error" });
@@ -62,16 +87,23 @@ const createurl = async function (req, res) {
 const geturl = async function (req, res) {
   try {
     let urlCode = req.params.urlCode;
-    if (!urlCode) {
-      res.status(400).send({ status: false, msg: "please provide UrlCode" });
-    }
+
+    let cachedData = await GET_ASYNC(`${urlCode}`)
+        if (cachedData) {
+
+            console.log("comming from redis",cachedData)
+            let changed = JSON.parse(cachedData)
+            return res.status(302).redirect(changed.longUrl)
+        }
 
     let checkUrl = await urlModel.findOne({ urlCode });
     if (!checkUrl) {
-      return res.status(404).send({ status: false, msg: "Invalid UrlCode" });
-    } else {
-      return res.redirect(307, checkUrl.longUrl);
-    }
+      return res.status(404).send({ status: false, msg: "url not found" });
+    } 
+    await SET_ASYNC(`${urlCode}`, JSON.stringify(checkUrl))
+    return res.status(302).redirect(checkUrl.longUrl);
+   
+    
   } catch (error) {}
 };
 
