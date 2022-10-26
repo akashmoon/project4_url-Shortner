@@ -8,11 +8,15 @@ const {promisify}=require("util")
 //-----------------------Connection setup--------------------------
 
 const redisClient = redis.createClient(
-  17993,
-  "redis-17993.c264.ap-south-1-1.ec2.cloud.redislabs.com",
+
+  // 17993,
+  // "redis-17993.c264.ap-south-1-1.ec2.cloud.redislabs.com",
+  // { no_ready_check: true }
+  16524,
+  "redis-16524.c301.ap-south-1-1.ec2.cloud.redislabs.com",
   { no_ready_check: true }
 );
-redisClient.auth("vptQNtxXsb7QqOqtXNX722NFlFy9ngBJ", function (err) {
+redisClient.auth("AF4bibcEGYYeLlGva4x47QtUs5xriHsE", function (err) {
   if (err) throw err;
 });
 
