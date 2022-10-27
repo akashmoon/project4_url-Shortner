@@ -9,7 +9,7 @@ const app = express();
 app.use(bodyParser.json());
 
 
-mongoose.connect("mongodb+srv://ranaarjunktd:Arjun123@cluster0.8wa2bbn.mongodb.net/Group52Database?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://akashmoon:akash_moon@cluster0.xvaineh.mongodb.net/project3_shoppingCart?retryWrites=true&w=majority", {
     useNewUrlParser: true
 })
     .then(() => console.log("MongoDb is connected"))
